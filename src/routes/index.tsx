@@ -39,6 +39,13 @@ type Subject = {
 
 const STORAGE_KEY = "classmate.attendance.subjects.v1";
 const TARGET = 75;
+const SUBJECT_DOT_COLORS: Record<Subject["color"], string> = {
+  green: "bg-subject-green",
+  blue: "bg-subject-blue",
+  amber: "bg-subject-amber",
+  rose: "bg-subject-rose",
+  violet: "bg-subject-violet",
+};
 
 function createSampleSubjects(): Subject[] {
   return [
@@ -80,8 +87,9 @@ function AttendanceDashboard() {
         const parsed: unknown = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.every(isSubject)) {
           setSubjects(parsed);
-          if (parsed.length > 0 && !parsed.some((subject) => subject.id === selectedId)) {
-            setSelectedId(parsed[0].id);
+          const firstSubject = parsed[0];
+          if (firstSubject && !parsed.some((subject) => subject.id === selectedId)) {
+            setSelectedId(firstSubject.id);
           }
         }
       }
@@ -92,15 +100,18 @@ function AttendanceDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready) return undefined;
+    let timeout: number | undefined;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));
       setSaved(true);
-      const timeout = window.setTimeout(() => setSaved(false), 1600);
-      return () => window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => setSaved(false), 1600);
     } catch {
       setSaved(false);
     }
+    return () => {
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    };
   }, [ready, subjects]);
 
   const selected = subjects.find((subject) => subject.id === selectedId) ?? subjects[0];
@@ -124,12 +135,13 @@ function AttendanceDashboard() {
     const name = newName.trim();
     const code = newCode.trim().toUpperCase();
     if (!name || !code) return;
+    const color = (["green", "blue", "amber", "rose", "violet"] as const)[subjects.length % 5] ?? "green";
     const subject: Subject = {
       id: `subject-${Date.now()}`,
       name,
       code,
       faculty: "Add faculty name",
-      color: (["green", "blue", "amber", "rose", "violet"] as const)[subjects.length % 5],
+      color,
       present: 0,
       absent: 0,
     };
@@ -234,7 +246,7 @@ function SubjectRow({ subject, active, onSelect }: { subject: Subject; active: b
   const total = subject.present + subject.absent;
   return (
     <button onClick={onSelect} aria-pressed={active} className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-4 text-left transition-colors hover:bg-muted/55 sm:px-5 md:grid-cols-[minmax(180px,1.5fr)_minmax(90px,0.8fr)_minmax(130px,1.2fr)_74px_24px] md:gap-4 ${active ? "bg-accent/35" : "bg-card"}`}>
-      <span className="flex min-w-0 items-center gap-3"><span className={`hidden size-1.5 shrink-0 rounded-full md:block bg-subject-${subject.color}`} /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{subject.name}</span><span className="mt-0.5 block text-[11px] text-muted-foreground">{subject.code}<span className="mx-1.5">·</span>{subject.faculty}</span></span></span>
+      <span className="flex min-w-0 items-center gap-3"><span className={`hidden size-1.5 shrink-0 rounded-full md:block ${SUBJECT_DOT_COLORS[subject.color]}`} /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{subject.name}</span><span className="mt-0.5 block text-[11px] text-muted-foreground">{subject.code}<span className="mx-1.5">·</span>{subject.faculty}</span></span></span>
       <span className="text-right md:text-left"><span className={`block tabular-nums text-sm font-semibold ${colors.text}`}>{percent}%</span><span className="hidden md:block"><StatusPill risk={risk} /></span></span>
       <span className="col-span-2 flex items-center gap-2 md:col-span-1"><span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><span className={`block h-full rounded-full transition-all ${colors.bar}`} style={{ width: `${Math.min(100, percent)}%` }} /></span><span className="min-w-10 text-right text-[10px] tabular-nums text-muted-foreground md:min-w-0 md:w-11">{subject.present}/{total}</span></span>
       <span className="hidden md:block"><strong className={`tabular-nums ${getSafeBunks(counts) === 0 ? "text-attendance-risk" : "text-foreground"}`}>{getSafeBunks(counts)}</strong></span>
@@ -257,7 +269,7 @@ function SelectedSubject({ subject, onLog }: { subject: Subject; onLog: (id: str
 
   return (
     <section aria-label={`${subject.name} details`} className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="border-b border-border px-5 pb-4 pt-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="mb-2 flex items-center gap-2"><span className={`size-2 rounded-full bg-subject-${subject.color}`} /><span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{subject.code}</span></div><h2 className="truncate text-lg font-semibold">{subject.name}</h2><p className="mt-1 text-xs text-muted-foreground">{subject.faculty}</p></div><StatusPill risk={risk} /></div></div>
+      <div className="border-b border-border px-5 pb-4 pt-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="mb-2 flex items-center gap-2"><span className={`size-2 rounded-full ${SUBJECT_DOT_COLORS[subject.color]}`} /><span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{subject.code}</span></div><h2 className="truncate text-lg font-semibold">{subject.name}</h2><p className="mt-1 text-xs text-muted-foreground">{subject.faculty}</p></div><StatusPill risk={risk} /></div></div>
       <div className="px-5 py-5">
         <div className="flex items-center gap-4">
           <div className="relative flex size-[108px] shrink-0 items-center justify-center">
