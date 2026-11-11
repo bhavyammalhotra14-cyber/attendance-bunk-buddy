@@ -7,6 +7,14 @@ export type AttendanceCounts = {
 
 export type AttendanceRisk = "on-track" | "caution" | "below-target";
 
+export function adjustAttendanceCount(
+  counts: AttendanceCounts,
+  status: keyof AttendanceCounts,
+  change: -1 | 1,
+): AttendanceCounts {
+  return { ...counts, [status]: Math.max(0, counts[status] + change) };
+}
+
 export function getAttendanceRate({ present, absent }: AttendanceCounts) {
   const total = present + absent;
   return total === 0 ? 0 : present / total;

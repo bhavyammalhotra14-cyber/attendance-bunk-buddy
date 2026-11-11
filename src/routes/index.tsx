@@ -10,10 +10,10 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
+  Minus,
   Plus,
   Sparkles,
   Target,
-  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   getAttendanceRisk,
   getRequiredClasses,
   getSafeBunks,
+  adjustAttendanceCount,
   type AttendanceCounts,
   type AttendanceRisk,
 } from "@/lib/attendance";
@@ -31,13 +32,12 @@ type Subject = {
   id: string;
   name: string;
   code: string;
-  faculty: string;
   color: "green" | "blue" | "amber" | "rose" | "violet";
   present: number;
   absent: number;
 };
 
-const STORAGE_KEY = "classmate.attendance.subjects.v1";
+const STORAGE_KEY = "classmate.attendance.subjects.v2";
 const TARGET = 75;
 const SUBJECT_DOT_COLORS: Record<Subject["color"], string> = {
   green: "bg-subject-green",
@@ -49,11 +49,11 @@ const SUBJECT_DOT_COLORS: Record<Subject["color"], string> = {
 
 function createSampleSubjects(): Subject[] {
   return [
-    { id: "ds", name: "Data Structures", code: "CS 204", faculty: "Dr. N. Sharma", color: "green", present: 18, absent: 4 },
-    { id: "math", name: "Engineering Mathematics", code: "MA 201", faculty: "Prof. R. Iyer", color: "blue", present: 23, absent: 9 },
-    { id: "dbms", name: "Database Systems", code: "CS 208", faculty: "Dr. P. Mehta", color: "amber", present: 17, absent: 3 },
-    { id: "os", name: "Operating Systems", code: "CS 210", faculty: "Prof. A. Rao", color: "rose", present: 14, absent: 5 },
-    { id: "comms", name: "Technical Communication", code: "HU 202", faculty: "Ms. S. Kapoor", color: "violet", present: 20, absent: 2 },
+    { id: "manufacturing", name: "Manufacturing Processes", code: "MP", color: "green", present: 0, absent: 0 },
+    { id: "communication", name: "Professional Communication", code: "PC", color: "blue", present: 0, absent: 0 },
+    { id: "drawing", name: "Engineering Drawing", code: "ED", color: "amber", present: 0, absent: 0 },
+    { id: "physics", name: "Physics", code: "PHY", color: "rose", present: 0, absent: 0 },
+    { id: "maths", name: "Maths", code: "MATH", color: "violet", present: 0, absent: 0 },
   ];
 }
 
@@ -74,7 +74,7 @@ export const Route = createFileRoute("/")({
 function AttendanceDashboard() {
   const [subjects, setSubjects] = useState<Subject[]>(() => createSampleSubjects());
   const [ready, setReady] = useState(false);
-  const [selectedId, setSelectedId] = useState("ds");
+  const [selectedId, setSelectedId] = useState("manufacturing");
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCode, setNewCode] = useState("");
@@ -124,9 +124,9 @@ function AttendanceDashboard() {
   }, [subjects]);
   const needsAttention = subjects.filter((subject) => getAttendanceRisk(subject) === "below-target").length;
 
-  function updateAttendance(id: string, status: "present" | "absent") {
+  function updateAttendance(id: string, status: "present" | "absent", change: -1 | 1) {
     setSubjects((current) => current.map((subject) => subject.id === id
-      ? { ...subject, [status]: subject[status] + 1 }
+      ? { ...subject, ...adjustAttendanceCount(subject, status, change) }
       : subject));
   }
 
@@ -140,7 +140,6 @@ function AttendanceDashboard() {
       id: `subject-${Date.now()}`,
       name,
       code,
-      faculty: "Add faculty name",
       color,
       present: 0,
       absent: 0,
@@ -219,7 +218,7 @@ function AttendanceDashboard() {
           </section>
 
           <aside className="lg:sticky lg:top-6">
-            {selected ? <SelectedSubject subject={selected} onLog={updateAttendance} /> : <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">Add a subject to begin logging attendance.</div>}
+             {selected ? <SelectedSubject subject={selected} onAdjust={updateAttendance} /> : <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">Add a subject to begin logging attendance.</div>}
             <div className="mt-5 border-l-2 border-accent pl-4 py-1">
               <div className="flex items-center gap-2 text-xs font-semibold"><Clock3 className="size-3.5 text-primary" /> A tiny reminder</div>
               <p className="mt-1.5 text-xs leading-5 text-muted-foreground">A missed class is just one data point. Keep showing up and your numbers will follow.</p>
@@ -246,7 +245,7 @@ function SubjectRow({ subject, active, onSelect }: { subject: Subject; active: b
   const total = subject.present + subject.absent;
   return (
     <button onClick={onSelect} aria-pressed={active} className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-4 text-left transition-colors hover:bg-muted/55 sm:px-5 md:grid-cols-[minmax(180px,1.5fr)_minmax(90px,0.8fr)_minmax(130px,1.2fr)_74px_24px] md:gap-4 ${active ? "bg-accent/35" : "bg-card"}`}>
-      <span className="flex min-w-0 items-center gap-3"><span className={`hidden size-1.5 shrink-0 rounded-full md:block ${SUBJECT_DOT_COLORS[subject.color]}`} /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{subject.name}</span><span className="mt-0.5 block text-[11px] text-muted-foreground">{subject.code}<span className="mx-1.5">·</span>{subject.faculty}</span></span></span>
+      <span className="flex min-w-0 items-center gap-3"><span className={`hidden size-1.5 shrink-0 rounded-full md:block ${SUBJECT_DOT_COLORS[subject.color]}`} /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{subject.name}</span><span className="mt-0.5 block text-[11px] text-muted-foreground">{subject.code}</span></span></span>
       <span className="text-right md:text-left"><span className={`block tabular-nums text-sm font-semibold ${colors.text}`}>{percent}%</span><span className="hidden md:block"><StatusPill risk={risk} /></span></span>
       <span className="col-span-2 flex items-center gap-2 md:col-span-1"><span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><span className={`block h-full rounded-full transition-all ${colors.bar}`} style={{ width: `${Math.min(100, percent)}%` }} /></span><span className="min-w-10 text-right text-[10px] tabular-nums text-muted-foreground md:min-w-0 md:w-11">{subject.present}/{total}</span></span>
       <span className="hidden md:block"><strong className={`tabular-nums ${getSafeBunks(counts) === 0 ? "text-attendance-risk" : "text-foreground"}`}>{getSafeBunks(counts)}</strong></span>
@@ -256,7 +255,7 @@ function SubjectRow({ subject, active, onSelect }: { subject: Subject; active: b
   );
 }
 
-function SelectedSubject({ subject, onLog }: { subject: Subject; onLog: (id: string, status: "present" | "absent") => void }) {
+function SelectedSubject({ subject, onAdjust }: { subject: Subject; onAdjust: (id: string, status: "present" | "absent", change: -1 | 1) => void }) {
   const counts: AttendanceCounts = subject;
   const rate = getAttendanceRate(counts);
   const risk = getAttendanceRisk(counts);
@@ -269,7 +268,7 @@ function SelectedSubject({ subject, onLog }: { subject: Subject; onLog: (id: str
 
   return (
     <section aria-label={`${subject.name} details`} className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="border-b border-border px-5 pb-4 pt-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="mb-2 flex items-center gap-2"><span className={`size-2 rounded-full ${SUBJECT_DOT_COLORS[subject.color]}`} /><span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{subject.code}</span></div><h2 className="truncate text-lg font-semibold">{subject.name}</h2><p className="mt-1 text-xs text-muted-foreground">{subject.faculty}</p></div><StatusPill risk={risk} /></div></div>
+       <div className="border-b border-border px-5 pb-4 pt-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="mb-2 flex items-center gap-2"><span className={`size-2 rounded-full ${SUBJECT_DOT_COLORS[subject.color]}`} /><span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{subject.code}</span></div><h2 className="truncate text-lg font-semibold">{subject.name}</h2></div><StatusPill risk={risk} /></div></div>
       <div className="px-5 py-5">
         <div className="flex items-center gap-4">
           <div className="relative flex size-[108px] shrink-0 items-center justify-center">
@@ -280,10 +279,17 @@ function SelectedSubject({ subject, onLog }: { subject: Subject; onLog: (id: str
         </div>
         <div className="my-5 grid grid-cols-2 divide-x divide-border border-y border-border py-3.5"><div className="pr-3"><div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground"><ArrowDownRight className="size-3" /> Safe to miss</div><div className={`mt-1.5 text-2xl font-semibold tabular-nums ${safeBunks === 0 ? "text-attendance-risk" : "text-foreground"}`}>{safeBunks}<span className="ml-1 text-xs font-medium text-muted-foreground">classes</span></div></div><div className="pl-4"><div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground"><ArrowUpRight className="size-3" /> To reach 75%</div><div className="mt-1.5 text-2xl font-semibold tabular-nums">{required}<span className="ml-1 text-xs font-medium text-muted-foreground">classes</span></div></div></div>
         <div className={`rounded-md px-3.5 py-3 ${colors.soft}`}><p className={`text-xs font-semibold ${colors.text}`}>{risk === "on-track" ? "You’re in a good spot." : risk === "caution" ? "You’re getting close to the line." : "A little catch-up will help."}</p><p className="mt-1 text-[11px] leading-4 text-muted-foreground">{risk === "below-target" ? `Attend ${required} classes in a row to get back to the 75% minimum.` : safeBunks > 0 ? `${safeBunks} more ${safeBunks === 1 ? "absence" : "absences"} before you reach the minimum.` : "Attend your next class to keep your attendance above the minimum."}</p></div>
-        <div className="mt-5"><div className="mb-2 text-xs font-semibold">Log a class</div><div className="grid grid-cols-2 gap-2"><Button className="bg-attendance-safe text-primary-foreground hover:bg-attendance-safe/90" onClick={() => onLog(subject.id, "present")}><Check className="size-4" /> Present</Button><Button variant="outline" className="border-attendance-risk/35 text-attendance-risk hover:bg-attendance-risk-soft" onClick={() => onLog(subject.id, "absent")}><X className="size-4" /> Absent</Button></div></div>
+         <div className="mt-5"><div className="mb-2 text-xs font-semibold">Adjust class counts</div><div className="grid gap-2">
+           <ClassCountControl label="Present" count={subject.present} onDecrease={() => onAdjust(subject.id, "present", -1)} onIncrease={() => onAdjust(subject.id, "present", 1)} />
+           <ClassCountControl label="Absent" count={subject.absent} onDecrease={() => onAdjust(subject.id, "absent", -1)} onIncrease={() => onAdjust(subject.id, "absent", 1)} />
+         </div></div>
       </div>
     </section>
   );
+}
+
+function ClassCountControl({ label, count, onDecrease, onIncrease }: { label: string; count: number; onDecrease: () => void; onIncrease: () => void }) {
+  return <div className="flex items-center justify-between rounded-md border border-border px-3 py-2"><span className="text-sm font-medium">{label}</span><div className="flex items-center gap-3"><Button type="button" variant="outline" size="icon" className="size-8" aria-label={`Decrease ${label.toLowerCase()} count`} disabled={count === 0} onClick={onDecrease}><Minus /></Button><span className="min-w-6 text-center font-semibold tabular-nums" aria-live="polite">{count}</span><Button type="button" variant="outline" size="icon" className="size-8" aria-label={`Increase ${label.toLowerCase()} count`} onClick={onIncrease}><Plus /></Button></div></div>;
 }
 
 function StatusPill({ risk }: { risk: AttendanceRisk }) {
@@ -305,7 +311,6 @@ function isSubject(value: unknown): value is Subject {
   return typeof subject.id === "string"
     && typeof subject.name === "string"
     && typeof subject.code === "string"
-    && typeof subject.faculty === "string"
     && ["green", "blue", "amber", "rose", "violet"].includes(subject.color ?? "")
     && Number.isInteger(subject.present) && (subject.present ?? -1) >= 0
     && Number.isInteger(subject.absent) && (subject.absent ?? -1) >= 0;
