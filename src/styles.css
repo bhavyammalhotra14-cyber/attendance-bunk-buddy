@@ -112,6 +112,11 @@
   --attendance-watch-soft: oklch(0.95 0.055 83);
   --attendance-risk: oklch(0.57 0.18 28);
   --attendance-risk-soft: oklch(0.94 0.045 28);
+  --subject-green: oklch(0.56 0.14 151);
+  --subject-blue: oklch(0.56 0.13 235);
+  --subject-amber: oklch(0.72 0.15 79);
+  --subject-rose: oklch(0.62 0.15 18);
+  --subject-violet: oklch(0.57 0.13 305);
 }
 
 @theme inline {
@@ -121,6 +126,11 @@
   --color-attendance-watch-soft: var(--attendance-watch-soft);
   --color-attendance-risk: var(--attendance-risk);
   --color-attendance-risk-soft: var(--attendance-risk-soft);
+  --color-subject-green: var(--subject-green);
+  --color-subject-blue: var(--subject-blue);
+  --color-subject-amber: var(--subject-amber);
+  --color-subject-rose: var(--subject-rose);
+  --color-subject-violet: var(--subject-violet);
 }
 
 .dark {
@@ -162,6 +172,11 @@
   --attendance-watch-soft: oklch(0.31 0.045 83);
   --attendance-risk: oklch(0.72 0.15 28);
   --attendance-risk-soft: oklch(0.3 0.045 28);
+  --subject-green: oklch(0.72 0.12 151);
+  --subject-blue: oklch(0.72 0.11 235);
+  --subject-amber: oklch(0.8 0.13 79);
+  --subject-rose: oklch(0.72 0.13 18);
+  --subject-violet: oklch(0.72 0.12 305);
 }
 
 @layer base {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -119,7 +119,7 @@ function AttendanceDashboard() {
       : subject));
   }
 
-  function addSubject(event: React.FormEvent<HTMLFormElement>) {
+  function addSubject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = newName.trim();
     const code = newCode.trim().toUpperCase();
@@ -220,7 +220,7 @@ function AttendanceDashboard() {
   );
 }
 
-function SummaryMetric({ label, value, detail, icon, accent }: { label: string; value: string; detail: string; icon: React.ReactNode; accent: "primary" | "safe" | "watch" }) {
+function SummaryMetric({ label, value, detail, icon, accent }: { label: string; value: string; detail: string; icon: ReactNode; accent: "primary" | "safe" | "watch" }) {
   const color = accent === "primary" ? "text-primary" : accent === "safe" ? "text-attendance-safe" : "text-attendance-watch";
   return <div className="bg-card px-4 py-4 sm:px-5 sm:py-5"><div className={`mb-3 ${color}`}>{icon}</div><div className="tabular-nums text-3xl font-semibold leading-none sm:text-[34px]">{value}</div><div className="mt-2 text-xs font-medium sm:text-sm">{label}</div><div className="mt-1 text-[11px] text-muted-foreground sm:text-xs">{detail}</div></div>;
 }
